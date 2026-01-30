@@ -13,6 +13,7 @@ class OrderItem extends Model
 
     protected $casts = [
         'price' => 'decimal:2',
+        'vat_amount' => 'decimal:2',
     ];
 
     public function order()

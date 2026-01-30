@@ -58,7 +58,17 @@ Route::middleware(['auth', 'role:Super Admin|Store Manager'])->prefix('admin')->
     Route::get('/marketing/campaigns', [App\Http\Controllers\Admin\MarketingController::class, 'campaigns'])->name('admin.marketing.campaigns');
     Route::resource('categories', App\Http\Controllers\Admin\CategoryController::class)->names('admin.categories');
     Route::resource('brands', App\Http\Controllers\Admin\BrandController::class)->names('admin.brands');
+    Route::resource('suppliers', App\Http\Controllers\Admin\SupplierController::class)->names('admin.suppliers');
     Route::resource('products', App\Http\Controllers\Admin\ProductController::class)->names('admin.products');
+    Route::delete('products/{product}/images/{image}', [App\Http\Controllers\Admin\ProductController::class, 'destroyImage'])->name('admin.products.images.destroy');
     Route::resource('orders', App\Http\Controllers\Admin\OrderController::class)->only(['index', 'show', 'update'])->names('admin.orders');
+    Route::resource('purchase-orders', App\Http\Controllers\Admin\PurchaseOrderController::class)->names('admin.purchase-orders');
+    Route::patch('purchase-orders/{purchase_order}/status', [App\Http\Controllers\Admin\PurchaseOrderController::class, 'updateStatus'])->name('admin.purchase-orders.update-status');
     Route::resource('coupons', App\Http\Controllers\Admin\CouponController::class)->names('admin.coupons');
+    Route::get('/accounting', [App\Http\Controllers\Admin\AccountingController::class, 'index'])->name('admin.accounting.index');
+    Route::get('/accounting/vat', [App\Http\Controllers\Admin\AccountingController::class, 'vatReport'])->name('admin.accounting.vat');
+
+    // Barcode Routes
+    Route::get('/products/resolve-barcode/{barcode}', [App\Http\Controllers\Admin\BarcodeController::class, 'resolve'])->name('admin.products.resolve-barcode');
+    Route::get('/products/barcode-lookup/{barcode}', [App\Http\Controllers\Admin\BarcodeController::class, 'lookupAjax'])->name('admin.products.barcode-lookup');
 });

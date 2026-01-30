@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Supplier;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -55,6 +56,9 @@ class DashboardController extends Controller
 
         $outOfStockProducts = Product::where('stock_quantity', '<=', 0)->count();
 
+        // Supplier Liability
+        $totalLiability = Supplier::sum('current_balance');
+
         return view('admin.dashboard', compact(
             'todaySales',
             'weekSales',
@@ -66,7 +70,8 @@ class DashboardController extends Controller
             'recentOrders',
             'chartData',
             'lowStockProducts',
-            'outOfStockProducts'
+            'outOfStockProducts',
+            'totalLiability'
         ));
     }
 }

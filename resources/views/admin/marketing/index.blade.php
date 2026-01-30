@@ -76,22 +76,22 @@
                             <div class="flex justify-between text-sm mb-1">
                                 <span class="text-gray-700 dark:text-gray-300">Add to Cart</span>
                                 <span class="font-bold text-gray-900 dark:text-white">{{ number_format($addToCarts) }}
-                                    ({{ number_format(($addToCarts / $visitors) * 100, 1) }}%)</span>
+                                    ({{ $visitors > 0 ? number_format(($addToCarts / $visitors) * 100, 1) : 0 }}%)</span>
                             </div>
                             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
                                 <div class="bg-green-600 h-4 rounded-full"
-                                    style="width: {{ ($addToCarts / $visitors) * 100 }}%"></div>
+                                    style="width: {{ $visitors > 0 ? ($addToCarts / $visitors) * 100 : 0 }}%"></div>
                             </div>
                         </div>
                         <div>
                             <div class="flex justify-between text-sm mb-1">
                                 <span class="text-gray-700 dark:text-gray-300">Checkout</span>
                                 <span class="font-bold text-gray-900 dark:text-white">{{ number_format($checkouts) }}
-                                    ({{ number_format(($checkouts / $visitors) * 100, 1) }}%)</span>
+                                    ({{ $visitors > 0 ? number_format(($checkouts / $visitors) * 100, 1) : 0 }}%)</span>
                             </div>
                             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
                                 <div class="bg-yellow-600 h-4 rounded-full"
-                                    style="width: {{ ($checkouts / $visitors) * 100 }}%"></div>
+                                    style="width: {{ $visitors > 0 ? ($checkouts / $visitors) * 100 : 0 }}%"></div>
                             </div>
                         </div>
                         <div>

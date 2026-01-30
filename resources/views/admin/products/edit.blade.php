@@ -7,7 +7,7 @@
 
     <div class="py-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <form action="{{ route('admin.products.update', $product) }}" method="POST">
+            <form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -54,6 +54,14 @@
                                 </div>
                             </div>
 
+                            <div class="mt-4">
+                                <x-input-label for="vat_rate" :value="__('VAT Rate (%) - Optional')" />
+                                <x-text-input id="vat_rate" class="block mt-1 w-full" type="number" step="0.01"
+                                    name="vat_rate" :value="old('vat_rate', $product->vat_rate)" />
+                                <p class="mt-1 text-xs text-gray-500">Value Added Tax percentage for this product.</p>
+                                <x-input-error :messages="$errors->get('vat_rate')" class="mt-2" />
+                            </div>
+
                             <div class="grid grid-cols-2 gap-4 mt-4">
                                 <div>
                                     <x-input-label for="sku" :value="__('SKU')" />
@@ -68,6 +76,42 @@
                                         required />
                                     <x-input-error :messages="$errors->get('stock_quantity')" class="mt-2" />
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Images -->
+                        <div class="bg-white dark:bg-gray-800 p-6 shadow sm:rounded-lg">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Current Images</h3>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                @forelse($product->images as $image)
+                                    <div class="relative group">
+                                        <img src="{{ Storage::url($image->image_path) }}" alt="Product Image" class="w-full h-32 object-cover rounded-lg border dark:border-gray-700">
+                                        <div class="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                                            <form action="{{ route('admin.products.images.destroy', [$product, $image]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this image?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="bg-red-600 text-white p-2 rounded-full hover:bg-red-500">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        @if($image->is_primary)
+                                            <span class="absolute top-2 left-2 bg-primary-600 text-white text-[10px] px-2 py-0.5 rounded-full uppercase font-bold">Primary</span>
+                                        @endif
+                                    </div>
+                                @empty
+                                    <p class="text-gray-500 dark:text-gray-400 text-sm col-span-full">No images uploaded yet.</p>
+                                @endforelse
+                                
+                                {{-- Fallback for old URL image --}}
+                                @if($product->image_url && $product->images->isEmpty())
+                                    <div class="relative">
+                                        <img src="{{ $product->image_url }}" alt="Old Product Image" class="w-full h-32 object-cover rounded-lg border dark:border-gray-700">
+                                        <span class="absolute top-2 left-2 bg-yellow-600 text-white text-[10px] px-2 py-0.5 rounded-full uppercase font-bold text-center">External URL</span>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -127,12 +171,18 @@
                                 <x-input-error :messages="$errors->get('brand_id')" class="mt-2" />
                             </div>
 
-                            <!-- Image URL -->
+                            <!-- Product Images -->
                             <div class="mt-4">
-                                <x-input-label for="image_url" :value="__('Image URL')" />
-                                <x-text-input id="image_url" class="block mt-1 w-full" type="url" name="image_url"
-                                    :value="old('image_url', $product->image_url)" placeholder="https://..." />
-                                <x-input-error :messages="$errors->get('image_url')" class="mt-2" />
+                                <x-input-label for="images" :value="__('Add Images (Max 6 total)')" />
+                                <input id="images" class="block mt-1 w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" type="file" name="images[]" multiple accept="image/*" />
+                                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                                    <p>• Current total: {{ $product->images->count() }}/6</p>
+                                    <p>• Max file size: 2MB per image.</p>
+                                    <p>• Recommended: 800x800px (1:1 Ratio).</p>
+                                    <p>• Supported formats: JPEG, PNG, JPG, WEBP.</p>
+                                </div>
+                                <x-input-error :messages="$errors->get('images')" class="mt-2" />
+                                <x-input-error :messages="$errors->get('images.*')" class="mt-2" />
                             </div>
 
                         </div>

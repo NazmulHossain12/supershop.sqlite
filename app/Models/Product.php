@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
@@ -15,6 +16,7 @@ class Product extends Model
         'regular_price' => 'decimal:2',
         'sale_price' => 'decimal:2',
         'cost_price' => 'decimal:2',
+        'vat_rate' => 'decimal:2',
         'featured' => 'boolean',
         'status' => 'boolean',
     ];
@@ -32,5 +34,26 @@ class Product extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order');
+    }
+
+    public function getPrimaryImageUrlAttribute()
+    {
+        $primaryImage = $this->images->where('is_primary', true)->first() ?? $this->images->first();
+
+        if ($primaryImage) {
+            return Storage::url($primaryImage->image_path);
+        }
+
+        return $this->image_url ?? 'https://via.placeholder.com/800x800.png?text=No+Image';
     }
 }

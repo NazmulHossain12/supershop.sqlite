@@ -7,7 +7,7 @@
 
     <div class="py-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <form action="{{ route('admin.products.store') }}" method="POST">
+            <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -50,6 +50,14 @@
                                         name="sale_price" :value="old('sale_price')" />
                                     <x-input-error :messages="$errors->get('sale_price')" class="mt-2" />
                                 </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <x-input-label for="vat_rate" :value="__('VAT Rate (%) - Optional')" />
+                                <x-text-input id="vat_rate" class="block mt-1 w-full" type="number" step="0.01"
+                                    name="vat_rate" :value="old('vat_rate', 0)" />
+                                <p class="mt-1 text-xs text-gray-500">Value Added Tax percentage for this product.</p>
+                                <x-input-error :messages="$errors->get('vat_rate')" class="mt-2" />
                             </div>
 
                             <div class="grid grid-cols-2 gap-4 mt-4">
@@ -123,12 +131,20 @@
                                 <x-input-error :messages="$errors->get('brand_id')" class="mt-2" />
                             </div>
 
-                            <!-- Image URL -->
+                            <!-- Product Images -->
                             <div class="mt-4">
-                                <x-input-label for="image_url" :value="__('Image URL')" />
-                                <x-text-input id="image_url" class="block mt-1 w-full" type="url" name="image_url"
-                                    :value="old('image_url')" placeholder="https://..." />
-                                <x-input-error :messages="$errors->get('image_url')" class="mt-2" />
+                                <x-input-label for="images" :value="__('Product Images (Max 6)')" />
+                                <input id="images"
+                                    class="block mt-1 w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+                                    type="file" name="images[]" multiple accept="image/*" />
+                                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                                    <p>• Max 6 images allowed per product.</p>
+                                    <p>• Preferred size: 800x800px (1:1 Aspect Ratio).</p>
+                                    <p>• Max file size: 2MB per image.</p>
+                                    <p>• Supported formats: JPEG, PNG, JPG, WEBP.</p>
+                                </div>
+                                <x-input-error :messages="$errors->get('images')" class="mt-2" />
+                                <x-input-error :messages="$errors->get('images.*')" class="mt-2" />
                             </div>
 
                         </div>

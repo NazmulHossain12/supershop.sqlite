@@ -37,6 +37,9 @@
                                                 Qty</th>
                                             <th
                                                 class="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                                VAT</th>
+                                            <th
+                                                class="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                                 Total</th>
                                         </tr>
                                     </thead>
@@ -67,6 +70,9 @@
                                                 </td>
                                                 <td class="py-3 text-sm text-gray-500 dark:text-gray-400">
                                                     {{ $item->quantity }}
+                                                </td>
+                                                <td class="py-3 text-sm text-right text-gray-500 dark:text-gray-400">
+                                                    {{ Number::currency($item->vat_amount) }}
                                                 </td>
                                                 <td
                                                     class="py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
@@ -156,11 +162,16 @@
                             <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
                                 <h4 class="font-bold text-sm mb-2">Order Totals</h4>
                                 <div class="flex justify-between mb-1 text-sm">
-                                    <span>Subtotal</span>
-                                    <span>{{ Number::currency($order->grand_total) }}</span>
+                                    <span class="text-gray-500">Net Subtotal</span>
+                                    <span>{{ Number::currency($order->grand_total - $order->items->sum('vat_amount')) }}</span>
                                 </div>
-                                <div class="flex justify-between font-bold text-lg mt-2">
-                                    <span>Total</span>
+                                <div class="flex justify-between mb-1 text-sm">
+                                    <span class="text-gray-500">Total VAT</span>
+                                    <span>{{ Number::currency($order->items->sum('vat_amount')) }}</span>
+                                </div>
+                                <div
+                                    class="flex justify-between font-bold text-lg mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                                    <span>Grand Total</span>
                                     <span>{{ Number::currency($order->grand_total) }}</span>
                                 </div>
                             </div>

@@ -19,4 +19,9 @@ class Transaction extends Model
     {
         return $this->belongsTo(Order::class);
     }
+
+    public function ledgers()
+    {
+        return $this->hasMany(Ledger::class);
+    }
 }

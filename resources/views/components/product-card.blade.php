@@ -15,8 +15,7 @@
         </div>
 
         <!-- Product Image -->
-        <img src="{{ $product->image_url ?? 'https://via.placeholder.com/400x400?text=No+Image' }}"
-            alt="{{ $product->name }}"
+        <img src="{{ $product->primary_image_url }}" alt="{{ $product->name }}"
             class="object-cover w-full h-full transform group-hover:scale-110 transition-transform duration-500">
 
         <!-- Quick Action Overlay -->
