@@ -61,6 +61,9 @@
                                                 Unit Cost</th>
                                             <th
                                                 class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                VAT Included</th>
+                                            <th
+                                                class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Subtotal</th>
                                             <th class="px-4 py-2"></th>
                                         </tr>
@@ -74,7 +77,9 @@
                                                         required>
                                                         @foreach($products as $product)
                                                             <option value="{{ $product->id }}"
-                                                                data-cost="{{ $product->cost_price }}" {{ $poItem->product_id == $product->id ? 'selected' : '' }}>
+                                                                data-cost="{{ $product->cost_price }}"
+                                                                data-vat-rate="{{ $product->vat_rate ?? 0 }}"
+                                                                {{ $poItem->product_id == $product->id ? 'selected' : '' }}>
                                                                 {{ $product->name }}</option>
                                                         @endforeach
                                                     </select>
@@ -89,6 +94,8 @@
                                                         class="cost-input block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm sm:text-sm"
                                                         step="0.01" min="0" required value="{{ $poItem->unit_cost }}">
                                                 </td>
+                                                <td class="p-2 vat-amount text-sm font-medium text-gray-500">
+                                                    {{ number_format($poItem->vat_amount, 2) }}</td>
                                                 <td class="p-2 subtotal text-sm font-medium">
                                                     {{ number_format($poItem->subtotal, 2) }}</td>
                                                 <td class="p-2">
@@ -104,6 +111,17 @@
                                 class="mt-4 inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-500 active:bg-gray-700 focus:outline-none transition ease-in-out duration-150">
                                 + Add Item
                             </button>
+                        </div>
+
+                        <div class="mt-4 flex flex-col items-end gap-2 pr-12">
+                            <div class="text-sm">
+                                <span class="text-gray-500">Total VAT:</span>
+                                <span id="total-vat" class="font-bold ml-2">{{ number_format($purchaseOrder->total_vat_amount, 2) }}</span>
+                            </div>
+                            <div class="text-lg">
+                                <span class="text-gray-700 dark:text-gray-300">Grand Total:</span>
+                                <span id="grand-total" class="font-bold ml-2 text-primary-600">{{ number_format($purchaseOrder->total_amount, 2) }}</span>
+                            </div>
                         </div>
 
                         <div class="flex justify-end gap-4 mt-8 pt-4 border-t">
@@ -165,11 +183,34 @@
             });
 
             function calculateSubtotal(row) {
-                const qty = row.querySelector('.quantity-input').value;
-                const cost = row.querySelector('.cost-input').value;
-                const subtotal = (qty * cost).toFixed(2);
-                row.querySelector('.subtotal').textContent = subtotal;
+                const qty = parseFloat(row.querySelector('.quantity-input').value) || 0;
+                const cost = parseFloat(row.querySelector('.cost-input').value) || 0;
+                const select = row.querySelector('.product-select');
+                const option = select.options[select.selectedIndex];
+                const vatRate = option ? parseFloat(option.dataset.vatRate || 0) : 0;
+
+                const subtotal = (qty * cost);
+                const vatAmount = subtotal * (vatRate / (100 + vatRate));
+
+                row.querySelector('.subtotal').textContent = subtotal.toFixed(2);
+                row.querySelector('.vat-amount').textContent = vatAmount.toFixed(2);
+
+                calculateGrandTotal();
             }
+
+            function calculateGrandTotal() {
+                let total = 0;
+                let totalVat = 0;
+                document.querySelectorAll('.item-row').forEach(row => {
+                    total += parseFloat(row.querySelector('.subtotal').textContent) || 0;
+                    totalVat += parseFloat(row.querySelector('.vat-amount').textContent) || 0;
+                });
+                document.getElementById('total-vat').textContent = totalVat.toFixed(2);
+                document.getElementById('grand-total').textContent = total.toFixed(2);
+            }
+
+            // Initialize on load
+            calculateGrandTotal();
         });
     </script>
 </x-app-layout>

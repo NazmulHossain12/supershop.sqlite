@@ -42,7 +42,11 @@
         </div>
         <h3
             class="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-primary-600 transition-colors">
-            <a href="{{ route('products.show', $product->slug) }}">{{ $product->name }}</a>
+            @if($product->slug)
+                <a href="{{ route('products.show', $product->slug) }}">{{ $product->name }}</a>
+            @else
+                <span>{{ $product->name }}</span>
+            @endif
         </h3>
 
         <div class="mt-auto pt-2 flex items-center justify-between border-t border-gray-100 dark:border-gray-700">

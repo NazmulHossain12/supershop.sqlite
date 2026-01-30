@@ -128,7 +128,12 @@
                             <div
                                 class="bg-gray-50 dark:bg-gray-700/30 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
                                 <h3 class="text-lg font-bold mb-4">Write a Review</h3>
-                                <form action="{{ route('products.reviews.store', $product) }}" method="POST">
+                                @if($product->id)
+                                    <form action="{{ route('products.reviews.store', $product) }}" method="POST">
+                                @else
+                                        <div class="text-sm text-red-500">Reviews are currently unavailable for this product.
+                                        </div>
+                                    @endif
                                     @csrf
                                     <div class="mb-4">
                                         <label

@@ -69,12 +69,15 @@ class CreateInvoice extends CreateRecord
 
         $this->data['items'] = $items;
 
-        // Update total
+        // Update totals
         $total = 0;
+        $totalVat = 0;
         foreach ($items as $item) {
-            $total += $item['subtotal'];
+            $total += (float) ($item['subtotal'] ?? 0);
+            $totalVat += (float) ($item['vat_amount'] ?? 0);
         }
-        $this->data['total_amount'] = $total;
+        $this->data['total_amount'] = round($total, 2);
+        $this->data['total_vat_amount'] = round($totalVat, 2);
     }
 
     protected function afterCreate(): void
@@ -91,8 +94,8 @@ class CreateInvoice extends CreateRecord
         }
 
         // 2. Accounting Ledger Entries
-        $totalVat = $invoice->items->sum('vat_amount');
-        $netRevenue = (float) $invoice->total_amount - (float) $totalVat;
+        $totalVat = (float) ($invoice->total_vat_amount ?? $invoice->items->sum('vat_amount'));
+        $netRevenue = (float) $invoice->total_amount - $totalVat;
 
         $transaction = \App\Models\Transaction::create([
             'order_id' => $invoice->order_id,

@@ -16,9 +16,13 @@ use Filament\Tables\Table;
 
 class ProductResource extends Resource
 {
-    protected static ?string $navigationIcon = 'heroicon-o-archive-box';
+    protected static ?string $model = Product::class;
 
-    protected static ?string $navigationGroup = 'Inventory Management';
+    protected static ?string $slug = 'products';
+
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-archive-box';
+
+    protected static \UnitEnum|string|null $navigationGroup = 'Inventory Management';
 
     public static function form(Schema $schema): Schema
     {

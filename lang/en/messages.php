@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'welcome' => 'Welcome to SuperShop',
+    'pos' => 'POS Terminal',
+    'loyalty' => 'Loyalty System',
+    'rewards' => 'My Rewards',
+    'reports' => 'Reports',
+    'settings' => 'Settings',
+    'checkout' => 'Checkout',
+    'total' => 'Total',
+    'subtotal' => 'Subtotal',
+    'discount' => 'Discount',
+    'vat' => 'VAT',
+    'customer' => 'Customer',
+    'phone' => 'Phone',
+    'search' => 'Search',
+    'add_to_cart' => 'Add to Cart',
+    'pay' => 'Pay Now',
+    'language' => 'Language',
+    'english' => 'English',
+    'bangla' => 'Bengali',
+    'bahasha' => 'Bahasha',
+    'arabic' => 'Arabic',
+];

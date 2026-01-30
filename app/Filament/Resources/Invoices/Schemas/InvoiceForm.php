@@ -91,6 +91,20 @@ class InvoiceForm
                     ->reorderableWithButtons()
                     ->live(), // Important for dynamic updates
 
+                TextInput::make('total_vat_amount')
+                    ->label('Total VAT (Included)')
+                    ->numeric()
+                    ->prefix('$')
+                    ->readonly()
+                    ->placeholder(function (Get $get) {
+                        $items = $get('items') ?? [];
+                        $totalVat = 0;
+                        foreach ($items as $item) {
+                            $totalVat += (float) ($item['vat_amount'] ?? 0);
+                        }
+                        return round($totalVat, 2);
+                    }),
+
                 TextInput::make('total_amount')
                     ->label('Grand Total')
                     ->numeric()
@@ -102,7 +116,7 @@ class InvoiceForm
                         foreach ($items as $item) {
                             $total += (float) ($item['subtotal'] ?? 0);
                         }
-                        return $total;
+                        return round($total, 2);
                     }),
             ]);
     }

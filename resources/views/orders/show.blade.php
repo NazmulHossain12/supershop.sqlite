@@ -32,6 +32,7 @@
                                         <div class="flex-grow">
                                             <h4 class="font-medium text-gray-900 dark:text-white">{{ optional($item->product)->name ?? 'Product Unavailable' }}</h4>
                                             <p class="text-sm text-gray-500 dark:text-gray-400">Unit Price: {{ Number::currency($item->price) }}</p>
+                                            <p class="text-xs text-gray-400 dark:text-gray-500">VAT Included: {{ Number::currency($item->vat_amount) }}</p>
                                             <p class="text-sm text-gray-500 dark:text-gray-400">Qty: {{ $item->quantity }}</p>
                                         </div>
                                         <div class="font-bold text-gray-900 dark:text-white">
@@ -51,8 +52,12 @@
                         <div class="p-6 text-gray-900 dark:text-gray-100">
                             <h3 class="text-lg font-bold mb-4">Summary</h3>
                             <div class="flex justify-between mb-2 text-sm text-gray-600 dark:text-gray-400">
-                                <span>Subtotal</span>
-                                <span>{{ Number::currency($order->grand_total) }}</span>
+                                <span>Subtotal (Net)</span>
+                                <span>{{ Number::currency($order->grand_total - $order->total_vat_amount) }}</span>
+                            </div>
+                            <div class="flex justify-between mb-2 text-sm text-gray-600 dark:text-gray-400">
+                                <span>VAT</span>
+                                <span>{{ Number::currency($order->total_vat_amount) }}</span>
                             </div>
                             <div class="flex justify-between mb-2 text-sm text-gray-600 dark:text-gray-400">
                                 <span>Shipping</span>

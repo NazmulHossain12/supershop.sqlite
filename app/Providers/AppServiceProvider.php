@@ -22,5 +22,7 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\View::composer('layouts.navigation', function ($view) {
             $view->with('cartCount', app(\App\Services\CartService::class)->getItemCount());
         });
+
+        \App\Models\PurchaseOrder::observe(\App\Observers\PurchaseOrderObserver::class);
     }
 }

@@ -16,9 +16,13 @@ use Filament\Tables\Table;
 
 class InvoiceResource extends Resource
 {
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $model = Invoice::class;
 
-    protected static ?string $navigationGroup = 'Sales Management';
+    protected static ?string $slug = 'invoices';
+
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-document-text';
+
+    protected static \UnitEnum|string|null $navigationGroup = 'Sales Management';
 
     public static function form(Schema $schema): Schema
     {

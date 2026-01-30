@@ -75,6 +75,9 @@
                                                 Unit Cost</th>
                                             <th
                                                 class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                                VAT Included</th>
+                                            <th
+                                                class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
                                                 Subtotal</th>
                                         </tr>
                                     </thead>
@@ -85,6 +88,9 @@
                                                 <td class="px-4 py-3 text-right">{{ $item->quantity }}</td>
                                                 <td class="px-4 py-3 text-right">{{ Number::currency($item->unit_cost) }}
                                                 </td>
+                                                <td class="px-4 py-3 text-right text-gray-500">
+                                                    {{ Number::currency($item->vat_amount) }}
+                                                </td>
                                                 <td class="px-4 py-3 text-right font-medium">
                                                     {{ Number::currency($item->subtotal) }}
                                                 </td>
@@ -92,13 +98,61 @@
                                         @endforeach
                                     </tbody>
                                     <tfoot>
+                                        <tr class="bg-gray-50 dark:bg-gray-900 border-t">
+                                            <td colspan="4"
+                                                class="px-4 py-2 text-right text-sm text-gray-500 font-medium">Total
+                                                VAT:</td>
+                                            <td class="px-4 py-2 text-right text-sm text-gray-500 font-medium">
+                                                {{ Number::currency($purchaseOrder->total_vat_amount) }}
+                                            </td>
+                                        </tr>
                                         <tr class="bg-gray-50 dark:bg-gray-900">
-                                            <td colspan="3" class="px-4 py-3 text-right font-bold">Total Amount:</td>
+                                            <td colspan="4" class="px-4 py-3 text-right font-bold">Grand Total:</td>
                                             <td class="px-4 py-3 text-right font-bold text-lg text-primary-600">
                                                 {{ Number::currency($purchaseOrder->total_amount) }}
                                             </td>
                                         </tr>
                                     </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-bold mb-4">Payment History</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Date</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Method</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Ref</th>
+                                            <th
+                                                class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                                Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                        @forelse($purchaseOrder->payments as $payment)
+                                            <tr>
+                                                <td class="px-4 py-3 text-sm">
+                                                    {{ \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y') }}
+                                                </td>
+                                                <td class="px-4 py-3 text-sm">{{ $payment->payment_method }}</td>
+                                                <td class="px-4 py-3 text-sm">{{ $payment->reference_no ?? '-' }}</td>
+                                                <td class="px-4 py-3 text-right text-sm font-bold">
+                                                    {{ Number::currency($payment->amount) }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="4" class="px-4 py-4 text-center text-sm text-gray-500">No
+                                                    payments recorded yet.</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -109,7 +163,74 @@
                 <div class="space-y-6">
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
-                            <h3 class="text-lg font-bold mb-4">Actions</h3>
+                            <h3 class="text-lg font-bold mb-4">Payment Summary</h3>
+                            <div class="space-y-2 mb-6">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Total Amount:</span>
+                                    <span class="font-bold">{{ Number::currency($purchaseOrder->total_amount) }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Paid Amount:</span>
+                                    <span
+                                        class="font-bold text-green-600">{{ Number::currency($purchaseOrder->paid_amount) }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm pt-2 border-t">
+                                    <span class="text-gray-500 font-bold">Balance:</span>
+                                    @php $balance = $purchaseOrder->total_amount - $purchaseOrder->paid_amount; @endphp
+                                    <span
+                                        class="font-extrabold {{ $balance > 0 ? 'text-red-600' : 'text-green-600' }}">{{ Number::currency($balance) }}</span>
+                                </div>
+                            </div>
+
+                            @if($balance > 0 && ($purchaseOrder->status === 'Ordered' || $purchaseOrder->status === 'Received'))
+                                <hr class="my-4 border-gray-100">
+                                <h4 class="text-sm font-bold mb-3">Record Payment</h4>
+                                <form action="{{ route('admin.purchase-orders.add-payment', $purchaseOrder) }}"
+                                    method="POST">
+                                    @csrf
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label
+                                                class="block text-xs font-bold text-gray-500 uppercase mb-1">Amount</label>
+                                            <input type="number" name="amount" step="0.01" max="{{ $balance }}" min="0.01"
+                                                required
+                                                class="block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm sm:text-sm"
+                                                value="{{ $balance }}">
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="block text-xs font-bold text-gray-500 uppercase mb-1">Method</label>
+                                            <select name="payment_method" required
+                                                class="block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm sm:text-sm">
+                                                <option value="Cash">Cash</option>
+                                                <option value="Bank Transfer">Bank Transfer</option>
+                                                <option value="Cheque">Cheque</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Date</label>
+                                            <input type="date" name="payment_date" required value="{{ date('Y-m-d') }}"
+                                                class="block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm sm:text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Reference
+                                                (Optional)</label>
+                                            <input type="text" name="reference_no" placeholder="e.g. TXN123"
+                                                class="block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm sm:text-sm">
+                                        </div>
+                                        <button type="submit"
+                                            class="w-full inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 active:bg-green-900 focus:outline-none transition ease-in-out duration-150">
+                                            Add Payment
+                                        </button>
+                                    </div>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-bold mb-4">Status Actions</h3>
                             <div class="mb-6">
                                 <p class="text-sm text-gray-500 mb-1">Current Status</p>
                                 @php

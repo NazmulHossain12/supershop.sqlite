@@ -10,6 +10,7 @@ use App\Models\PurchaseOrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Number;
 
 class PurchaseOrderController extends Controller
 {
@@ -42,8 +43,25 @@ class PurchaseOrderController extends Controller
             DB::beginTransaction();
 
             $totalAmount = 0;
+            $totalVatAmount = 0;
+            $itemsData = [];
+
             foreach ($validated['items'] as $item) {
-                $totalAmount += $item['quantity'] * $item['unit_cost'];
+                $product = Product::find($item['product_id']);
+                $vatRate = (float) ($product->vat_rate ?? 0);
+                $subtotal = $item['quantity'] * $item['unit_cost'];
+                $vatAmount = $subtotal * ($vatRate / (100 + $vatRate));
+
+                $totalAmount += $subtotal;
+                $totalVatAmount += $vatAmount;
+
+                $itemsData[] = [
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'unit_cost' => $item['unit_cost'],
+                    'vat_amount' => round($vatAmount, 2),
+                    'subtotal' => $subtotal,
+                ];
             }
 
             $purchaseOrder = PurchaseOrder::create([
@@ -52,17 +70,13 @@ class PurchaseOrderController extends Controller
                 'expected_delivery_date' => $validated['expected_delivery_date'],
                 'status' => 'Draft',
                 'total_amount' => $totalAmount,
+                'total_vat_amount' => round($totalVatAmount, 2),
                 'paid_amount' => 0,
             ]);
 
-            foreach ($validated['items'] as $item) {
-                PurchaseOrderItem::create([
-                    'purchase_order_id' => $purchaseOrder->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_cost' => $item['unit_cost'],
-                    'subtotal' => $item['quantity'] * $item['unit_cost'],
-                ]);
+            foreach ($itemsData as $itemData) {
+                $itemData['purchase_order_id'] = $purchaseOrder->id;
+                PurchaseOrderItem::create($itemData);
             }
 
             DB::commit();
@@ -115,8 +129,25 @@ class PurchaseOrderController extends Controller
             DB::beginTransaction();
 
             $totalAmount = 0;
+            $totalVatAmount = 0;
+            $itemsData = [];
+
             foreach ($validated['items'] as $item) {
-                $totalAmount += $item['quantity'] * $item['unit_cost'];
+                $product = Product::find($item['product_id']);
+                $vatRate = (float) ($product->vat_rate ?? 0);
+                $subtotal = $item['quantity'] * $item['unit_cost'];
+                $vatAmount = $subtotal * ($vatRate / (100 + $vatRate));
+
+                $totalAmount += $subtotal;
+                $totalVatAmount += $vatAmount;
+
+                $itemsData[] = [
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'unit_cost' => $item['unit_cost'],
+                    'vat_amount' => round($vatAmount, 2),
+                    'subtotal' => $subtotal,
+                ];
             }
 
             $purchaseOrder->update([
@@ -124,19 +155,15 @@ class PurchaseOrderController extends Controller
                 'reference_no' => $validated['reference_no'],
                 'expected_delivery_date' => $validated['expected_delivery_date'],
                 'total_amount' => $totalAmount,
+                'total_vat_amount' => round($totalVatAmount, 2),
             ]);
 
             // Simple approach: delete old items and create new ones
             $purchaseOrder->items()->delete();
 
-            foreach ($validated['items'] as $item) {
-                PurchaseOrderItem::create([
-                    'purchase_order_id' => $purchaseOrder->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_cost' => $item['unit_cost'],
-                    'subtotal' => $item['quantity'] * $item['unit_cost'],
-                ]);
+            foreach ($itemsData as $itemData) {
+                $itemData['purchase_order_id'] = $purchaseOrder->id;
+                PurchaseOrderItem::create($itemData);
             }
 
             DB::commit();
@@ -174,7 +201,20 @@ class PurchaseOrderController extends Controller
         if ($validated['status'] === 'Received' && $oldStatus !== 'Received') {
             DB::transaction(function () use ($purchaseOrder) {
                 foreach ($purchaseOrder->items as $item) {
-                    $item->product->increment('stock_quantity', $item->quantity);
+                    $product = $item->product;
+                    $currentQty = $product->stock_quantity;
+                    $currentCost = (float) $product->cost_price;
+                    $newQty = $item->quantity;
+                    $newCost = (float) $item->unit_cost;
+
+                    if ($currentQty + $newQty > 0) {
+                        // Weighted Average Cost Formula
+                        $updatedCost = (($currentQty * $currentCost) + ($newQty * $newCost)) / ($currentQty + $newQty);
+                        $product->cost_price = round($updatedCost, 2);
+                    }
+
+                    $product->stock_quantity += $newQty;
+                    $product->save();
                 }
 
                 // Update supplier balance (Liability increases)
@@ -192,16 +232,33 @@ class PurchaseOrderController extends Controller
                         'type' => 'Purchase',
                     ]);
 
-                    // Debit Inventory (Increase Asset)
+                    $netAmount = $purchaseOrder->total_amount - $purchaseOrder->total_vat_amount;
+
+                    // Debit Inventory (Increase Asset) - Net of VAT
                     \App\Models\Ledger::create([
                         'transaction_id' => $transaction->id,
                         'account_id' => $inventoryAccount->id,
-                        'debit' => $purchaseOrder->total_amount,
+                        'debit' => $netAmount,
                         'credit' => 0,
                     ]);
-                    $inventoryAccount->increment('balance', $purchaseOrder->total_amount);
+                    $inventoryAccount->increment('balance', $netAmount);
 
-                    // Credit Accounts Payable (Increase Liability)
+                    // Debit Sales Tax Payable (VAT Input - Decrease Liability/Increase Asset)
+                    if ($purchaseOrder->total_vat_amount > 0) {
+                        $salesTaxAccount = \App\Models\Account::where('code', '2200')->first();
+                        if ($salesTaxAccount) {
+                            \App\Models\Ledger::create([
+                                'transaction_id' => $transaction->id,
+                                'account_id' => $salesTaxAccount->id,
+                                'debit' => $purchaseOrder->total_vat_amount,
+                                'credit' => 0,
+                            ]);
+                            // Decreasing balance because it's a liability account being debited
+                            $salesTaxAccount->decrement('balance', $purchaseOrder->total_vat_amount);
+                        }
+                    }
+
+                    // Credit Accounts Payable (Increase Liability) - Total Amount Including VAT
                     \App\Models\Ledger::create([
                         'transaction_id' => $transaction->id,
                         'account_id' => $accountsPayableAccount->id,
@@ -214,5 +271,80 @@ class PurchaseOrderController extends Controller
         }
 
         return redirect()->route('admin.purchase-orders.show', $purchaseOrder)->with('success', 'Order status updated successfully.');
+    }
+
+    public function addPayment(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|string',
+            'payment_date' => 'required|date',
+            'reference_no' => 'nullable|string',
+            'notes' => 'nullable|string',
+        ]);
+
+        $balance = $purchaseOrder->total_amount - $purchaseOrder->paid_amount;
+        if ($validated['amount'] > $balance) {
+            return back()->with('error', 'Payment amount cannot exceed the remaining balance: ' . Number::currency($balance));
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // 1. Create Purchase Payment
+            $payment = \App\Models\PurchasePayment::create([
+                'purchase_order_id' => $purchaseOrder->id,
+                'supplier_id' => $purchaseOrder->supplier_id,
+                'amount' => $validated['amount'],
+                'payment_method' => $validated['payment_method'],
+                'payment_date' => $validated['payment_date'],
+                'reference_no' => $validated['reference_no'],
+                'notes' => $validated['notes'],
+            ]);
+
+            // 2. Update Purchase Order paid_amount
+            $purchaseOrder->increment('paid_amount', $validated['amount']);
+
+            // 3. Update Supplier balance (Liability decreases)
+            $purchaseOrder->supplier->decrement('current_balance', $validated['amount']);
+
+            // 4. Accounting Transaction
+            $cashAccount = \App\Models\Account::where('code', $validated['payment_method'] === 'Cash' ? '1001' : '1002')->first();
+            $accountsPayableAccount = \App\Models\Account::where('code', '2100')->first();
+
+            if ($cashAccount && $accountsPayableAccount) {
+                $transaction = \App\Models\Transaction::create([
+                    'transaction_date' => $validated['payment_date'],
+                    'reference' => $validated['reference_no'] ?? 'PAY-' . strtoupper(Str::random(8)),
+                    'description' => 'Supplier Payment - PO: ' . $purchaseOrder->reference_no,
+                    'type' => 'Payment',
+                ]);
+
+                // Debit Accounts Payable (Decrease Liability)
+                \App\Models\Ledger::create([
+                    'transaction_id' => $transaction->id,
+                    'account_id' => $accountsPayableAccount->id,
+                    'debit' => $validated['amount'],
+                    'credit' => 0,
+                ]);
+                $accountsPayableAccount->decrement('balance', $validated['amount']);
+
+                // Credit Cash/Bank (Decrease Asset)
+                \App\Models\Ledger::create([
+                    'transaction_id' => $transaction->id,
+                    'account_id' => $cashAccount->id,
+                    'debit' => 0,
+                    'credit' => $validated['amount'],
+                ]);
+                $cashAccount->decrement('balance', $validated['amount']);
+            }
+
+            DB::commit();
+            return back()->with('success', 'Payment added successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to add payment: ' . $e->getMessage());
+        }
     }
 }

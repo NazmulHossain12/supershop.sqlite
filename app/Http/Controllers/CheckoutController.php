@@ -57,7 +57,10 @@ class CheckoutController extends Controller
         try {
             DB::beginTransaction();
 
-            $grandTotal = $this->cartService->getTotal();
+            $subtotal = $this->cartService->getTotal();
+            $grandTotal = $this->cartService->getTotalWithDiscount();
+            $coupon = $this->cartService->getAppliedCoupon();
+            $discount = $coupon ? (float) $coupon['discount'] : 0;
 
             // Create Order
             $order = Order::create([
@@ -65,6 +68,7 @@ class CheckoutController extends Controller
                 'order_number' => 'ORD-' . strtoupper(Str::random(10)),
                 'status' => 'pending',
                 'grand_total' => $grandTotal,
+                'total_vat_amount' => 0, // Will update after calculating items
                 'item_count' => count($cart),
                 'is_paid' => false, // Default for COD
                 'payment_method' => $validated['payment_method'],
@@ -103,8 +107,21 @@ class CheckoutController extends Controller
                 }
             }
 
+            // If a discount was applied to the total, proportionally adjust the VAT
+            if ($subtotal > 0 && $discount > 0) {
+                $vatRatio = $grandTotal / $subtotal;
+                $totalVat = $totalVat * $vatRatio;
+            }
+
+            // Update order with final totals
+            $order->update([
+                'grand_total' => $grandTotal,
+                'total_vat_amount' => $totalVat
+            ]);
+
             // Clear cart
-            session()->forget('cart');
+            // Clear cart and coupon
+            session()->forget(['cart', 'applied_coupon']);
 
             // Record transaction & high-precision ledger entries
             $transaction = \App\Models\Transaction::create([
@@ -155,6 +172,7 @@ class CheckoutController extends Controller
                 'order_id' => $order->id,
                 'invoice_number' => 'INV-' . strtoupper(Str::random(8)),
                 'total_amount' => $order->grand_total,
+                'total_vat_amount' => $totalVat,
                 'issued_at' => now(),
             ]);
 

@@ -159,7 +159,13 @@
                 </td>
             </tr>
         </table>
-        <div style="margin-top: 50px; text-align: center; color: #999; font-size: 12px;">
+        <div style="margin-top: 50px; text-align: center;">
+            <div style="display: inline-block;">
+                {!! DNS1D::getBarcodeHTML($order->order_number, 'C128', 1.5, 40) !!}
+                <div style="font-size: 10px; margin-top: 5px; color: #666;">{{ $order->order_number }}</div>
+            </div>
+        </div>
+        <div style="margin-top: 20px; text-align: center; color: #999; font-size: 12px;">
             Thank you for your business! This is a computer-generated invoice.
         </div>
     </div>

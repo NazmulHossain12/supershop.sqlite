@@ -50,4 +50,24 @@ class BarcodeController extends Controller
             'message' => 'Product not found'
         ]);
     }
+
+    public function printLabels()
+    {
+        $products = Product::where('stock_quantity', '<=', 0)
+            ->orWhere('created_at', '>=', now()->subDays(7))
+            ->get();
+
+        if ($products->isEmpty()) {
+            return back()->with('info', 'No products found matching the criteria (zero stock or new).');
+        }
+
+        $pdf = \Barryvdh\Snappy\Facades\SnappyPdf::loadView('admin.barcode.labels', compact('products'))
+            ->setOption('page-size', 'A4')
+            ->setOption('margin-bottom', 0)
+            ->setOption('margin-top', 0)
+            ->setOption('margin-left', 0)
+            ->setOption('margin-right', 0);
+
+        return $pdf->download('shelf-labels-' . date('Y-m-d') . '.pdf');
+    }
 }

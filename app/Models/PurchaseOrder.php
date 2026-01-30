@@ -16,6 +16,7 @@ class PurchaseOrder extends Model
         'reference_no',
         'status',
         'total_amount',
+        'total_vat_amount',
         'paid_amount',
         'expected_delivery_date'
     ];
@@ -28,5 +29,10 @@ class PurchaseOrder extends Model
     public function items()
     {
         return $this->hasMany(PurchaseOrderItem::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(PurchasePayment::class);
     }
 }

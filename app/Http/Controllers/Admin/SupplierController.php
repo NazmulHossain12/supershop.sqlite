@@ -40,8 +40,9 @@ class SupplierController extends Controller
 
     public function show(Supplier $supplier)
     {
-        $purchaseOrders = $supplier->purchaseOrders()->latest()->paginate(10);
-        return view('admin.suppliers.show', compact('supplier', 'purchaseOrders'));
+        $purchaseOrders = $supplier->purchaseOrders()->latest()->paginate(10, ['*'], 'orders_page');
+        $payments = $supplier->payments()->latest()->paginate(10, ['*'], 'payments_page');
+        return view('admin.suppliers.show', compact('supplier', 'purchaseOrders', 'payments'));
     }
 
     public function edit(Supplier $supplier)

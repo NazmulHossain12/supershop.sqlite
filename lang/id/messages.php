@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'welcome' => 'Selamat datang di SuperShop',
+    'pos' => 'Terminal POS',
+    'loyalty' => 'Sistem Loyalitas',
+    'rewards' => 'Hadiah Saya',
+    'reports' => 'Laporan',
+    'settings' => 'Pengaturan',
+    'checkout' => 'Checkout',
+    'total' => 'Total',
+    'subtotal' => 'Subtotal',
+    'discount' => 'Diskon',
+    'vat' => 'PPN',
+    'customer' => 'Pelanggan',
+    'phone' => 'Telepon',
+    'search' => 'Cari',
+    'add_to_cart' => 'Tambah ke Keranjang',
+    'pay' => 'Bayar Sekarang',
+    'language' => 'Bahasa',
+    'english' => 'Inggris',
+    'bangla' => 'Benggala',
+    'bahasha' => 'Bahasa Indonesia',
+    'arabic' => 'Arab',
+];

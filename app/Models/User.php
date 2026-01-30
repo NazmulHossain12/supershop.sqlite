@@ -40,6 +40,27 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'loyalty_points_balance' => 'integer',
         ];
+    }
+
+    public function loyaltyTransactions()
+    {
+        return $this->hasMany(LoyaltyTransaction::class);
+    }
+
+    public function awardPoints($points, $description = 'Purchase', $invoiceId = null)
+    {
+        if ($points <= 0)
+            return;
+
+        $this->loyaltyTransactions()->create([
+            'points' => $points,
+            'type' => 'earn',
+            'description' => $description,
+            'invoice_id' => $invoiceId,
+        ]);
+
+        $this->increment('loyalty_points_balance', $points);
     }
 }

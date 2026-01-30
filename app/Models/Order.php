@@ -14,6 +14,7 @@ class Order extends Model
     protected $casts = [
         'is_paid' => 'boolean',
         'grand_total' => 'decimal:2',
+        'total_vat_amount' => 'decimal:2',
         'item_count' => 'integer',
         'created_at' => 'datetime',
     ];

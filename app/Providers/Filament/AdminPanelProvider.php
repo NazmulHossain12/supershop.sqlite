@@ -35,6 +35,15 @@ class AdminPanelProvider extends PanelProvider
             ->font('Inter')
             ->favicon(asset('favicon.ico'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
+            ->resources([
+                \App\Filament\Resources\Products\ProductResource::class,
+                \App\Filament\Resources\Invoices\InvoiceResource::class,
+                \App\Filament\Resources\Categories\CategoryResource::class,
+                \App\Filament\Resources\Brands\BrandResource::class,
+                \App\Filament\Resources\Suppliers\SupplierResource::class,
+                \App\Filament\Resources\PurchaseOrders\PurchaseOrderResource::class,
+                \App\Filament\Resources\Users\UserResource::class,
+            ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,
@@ -57,10 +66,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ])
-            ->renderHook(
-                'panels::body.end',
-                fn(): string => view('admin.barcode-listener')->render(),
-            );
+            ]);
+        // ->renderHook(
+        //     'panels::body.end',
+        //     fn(): string => view('admin.barcode-listener')->render(),
+        // );
     }
 }

@@ -16,6 +16,7 @@ class PurchaseOrderItem extends Model
         'product_id',
         'quantity',
         'unit_cost',
+        'vat_amount',
         'subtotal'
     ];
 
