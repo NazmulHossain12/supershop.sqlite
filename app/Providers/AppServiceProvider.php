@@ -19,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\View::composer('layouts.navigation', function ($view) {
+            $view->with('cartCount', app(\App\Services\CartService::class)->getItemCount());
+        });
     }
 }
